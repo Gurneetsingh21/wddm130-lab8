@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="author" content="Gurneet Singh Saini">
+    <title>Forms and Validation</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Bilbo+Swash+Caps" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Kalam" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/form.css">
+</head>
+
+
+<body>
+
+<nav class="top_menu">
+    <ul>
+        <li>
+            <a href="#">Order Form</a>
+        </li>
+
+        <li>
+            <a href="#">All Orders</a>
+        </li>
+    </ul>
+</nav>
+
+
+<section class="w50">
+
+<form method="POST" action="/">
+
+    <label>Name</label>
+    <input 
+        type="text" 
+        name="name"
+        value="<%= formData.name %>"
+    >
+    <br>
+
+
+    <label>Email</label>
+    <input 
+        type="email" 
+        name="email"
+        value="<%= formData.email %>"
+    >
+    <br>
+
+
+    <label>Phone</label>
+    <input 
+        type="text" 
+        name="phone"
+        value="<%= formData.phone %>"
+    >
+    <br>
+
+
+    <label>Post Code</label>
+    <input 
+        type="text" 
+        name="postcode"
+        value="<%= formData.postcode %>"
+    >
+    <br>
+
+
+    <label>Will you have lunch?</label>
+
+    <input 
+        type="radio" 
+        name="lunch" 
+        value="yes"
+        <%= formData.lunch === "yes" ? "checked" : "" %>
+    >
+    Yes
+
+    &nbsp;&nbsp;&nbsp;
+
+    <input 
+        type="radio" 
+        name="lunch" 
+        value="no"
+        <%= formData.lunch === "no" ? "checked" : "" %>
+    >
+    No
+
+    <br>
+
+
+    <label>Number of Tickets</label>
+
+    <select name="tickets">
+
+        <option value="">----- Select -----</option>
+
+        <option value="1" <%= formData.tickets == "1" ? "selected" : "" %>>
+            1
+        </option>
+
+        <option value="2" <%= formData.tickets == "2" ? "selected" : "" %>>
+            2
+        </option>
+
+        <option value="3" <%= formData.tickets == "3" ? "selected" : "" %>>
+            3
+        </option>
+
+    </select>
+
+    <br>
+
+
+    <label>Which Campus?</label>
+
+    <select name="campus">
+
+        <option value="">----- Select -----</option>
+
+        <option value="Doon" <%= formData.campus == "Doon" ? "selected" : "" %>>
+            Doon
+        </option>
+
+        <option value="Waterloo" <%= formData.campus == "Waterloo" ? "selected" : "" %>>
+            Waterloo
+        </option>
+
+        <option value="Cambridge" <%= formData.campus == "Cambridge" ? "selected" : "" %>>
+            Cambridge
+        </option>
+
+    </select>
+
+
+    <br><br>
+
+
+    <input type="submit" value="Submit">
+
+    <p id="errors">
+
+        <% errors.forEach(function(error){ %>
+
+            <%= error %><br>
+
+        <% }) %>
+
+    </p>
+
+
+</form>
+
+</section>
+
+
+
+<section class="w50">
+
+<div class="formData">
+
+    <p id="formResult">
+
+        <% if(receipt){ %>
+
+            Name: <%= receipt.name %>
+            <br>
+
+            Email: <%= receipt.email %>
+            <br>
+
+            Lunch: <%= receipt.lunch %>
+            <br>
+
+            Campus: <%= receipt.campus %>
+            <br>
+
+            Sub Total: $<%= receipt.subtotal.toFixed(2) %>
+            <br>
+
+            Tax: $<%= receipt.tax.toFixed(2) %>
+            <br>
+
+            Total: $<%= receipt.total.toFixed(2) %>
+
+
+        <% } else { %>
+
+            This is where the form data will show up.
+
+        <% } %>
+
+
+    </p>
+
+</div>
+
+</section>
+
+
+<div class="clear"></div>
+
+
+</body>
+
+</html>
