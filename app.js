@@ -1,146 +1,161 @@
+const dns = require('dns');
+
+dns.setDefaultResultOrder('ipv4first');
+
 const express = require('express');
 const path = require('path');
+const mongoose = require('mongoose');
+const { body, validationResult } = require('express-validator');
 
+require('dotenv').config();
 
-const {body, validationResult } = require('express-validator');
+const Submission = require('./models/Submission');
 
 const app = express();
 
-app.use(express.urlencoded({ extended: true }));
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('MongoDB connected successfully');
+    })
+    .catch((error) => {
+        console.log('MongoDB connection error:', error.message);
+    });
+
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+app.use(express.urlencoded({ extended: true }));
+
+
 app.get('/', (req, res) => {
-
     res.render('form', {
-
-        formData: {
-            name: '',
-            email: '',
-            phone: '',
-            postcode: '',
-            lunch: '',
-            tickets: '',
-            campus: ''
-        },
-
+        formData: {},
         errors: [],
+        receipt: null
+    });
+});
+
+
+app.post('/processForm',
+
+    [
+        body('tickets')
+            .isNumeric()
+            .withMessage('Tickets must be a valid number.')
+            .custom(value => {
+                if (Number(value) <= 0) {
+                    throw new Error('Tickets must be greater than 0.');
+                }
+                return true;
+            }),
+
+        body('lunch')
+            .custom((value, { req }) => {
+
+                if (value === 'yes' && Number(req.body.tickets) < 3) {
+                    throw new Error('Lunch can only be purchased when buying 3 or more tickets.');
+                }
+
+                return true;
+            })
+    ],
+
+async (req, res) => {
+
+
+    const formData = req.body;
+
+
+const errors = validationResult(req);
+
+
+if (!errors.isEmpty()) {
+
+    return res.render('form', {
+
+        formData: formData,
+
+        errors: errors.array(),
 
         receipt: null
 
     });
 
-});
-
-app.post(
-
-    '/',
-    [
-        body('name')
-            .notEmpty()
-            .withMessage('Name is required'),
-
-        body('email')
-            .notEmpty()
-            .withMessage('Email is required'),
-
-
-        body('postcode')
-            .matches(/^[A-Z][0-9][A-Z]\s[0-9][A-Z][0-9]$/i)
-            .withMessage('Post code is not in correct format'),
-
-        body('phone')
-            .matches(/^\(?(\d{3})\)?[\.\-\/\s]?(\d{3})[\.\-\/\s]?(\d{4})$/)
-            .withMessage('Phone is not in correct format'),
-
-        body('lunch')
-            .notEmpty()
-            .withMessage('Please select lunch option'),
-
-        body('tickets')
-            .notEmpty()
-            .withMessage('Please select number of tickets'),
-
-        body('campus')
-            .notEmpty()
-            .withMessage('Please select campus')
-    ],
-
-    (req, res) => {
-
-
-        const errors = validationResult(req);
-
-
-        if (!errors.isEmpty()) {
-
-
-            const errorMessages = errors.array()
-                .map(error => error.msg);
-
-            return res.render('form', {
-
-                formData: req.body,
-
-                errors: errorMessages,
-
-                receipt: null
-
-            });
-
-        }
-
-       const { name, email, phone, postcode, lunch, tickets, campus } = req.body;
-
-
-let subtotal = Number(tickets) * 100;
-
-
-if(lunch === "yes"){
-    subtotal += 60;
 }
 
-let tax = subtotal * 0.13;
+
+console.log(formData);
+
+    const ticketPrice = 50;
+
+    const tickets = Number(formData.tickets);
+
+    const subtotal = tickets * ticketPrice;
+
+    const tax = subtotal * 0.13;
+
+    const total = subtotal + tax;
 
 
-let total = subtotal + tax;
+    const submission = new Submission({
+
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        postcode: formData.postcode,
+        campus: formData.campus,
+        tickets: tickets,
+        lunch: formData.lunch,
+        subtotal: subtotal,
+        tax: tax,
+        total: total
+
+    });
 
 
-
-const receipt = {
-
-    name,
-    email,
-    lunch,
-    campus,
-    subtotal,
-    tax,
-    total
-
-};
+    await submission.save();
 
 
+    res.render('form', {
 
-res.render('form', {
+        formData: {},
 
-    formData: req.body,
+        errors: [],
 
-    errors: [],
+        receipt: submission
 
-    receipt: receipt
+    });
+
 
 });
 
 
+app.get('/submissions', async (req, res) => {
+
+    try {
+
+        const submissions = await Submission.find();
+
+        res.render('submissions', {
+            submissions: submissions
+        });
+
+    } catch (error) {
+
+        console.log(error);
+
+        res.send("Error loading submissions");
+
     }
-);
+
+});
 
 
 app.listen(3000, () => {
-
     console.log('Server running on http://localhost:3000');
-
 });

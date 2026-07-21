@@ -22,7 +22,7 @@
         </li>
 
         <li>
-            <a href="#">All Orders</a>
+          <a href="/submissions">All Orders</a>
         </li>
     </ul>
 </nav>
@@ -30,7 +30,7 @@
 
 <section class="w50">
 
-<form method="POST" action="/">
+<form method="POST" action="/processForm">
 
     <label>Name</label>
     <input 
@@ -140,15 +140,15 @@
 
     <input type="submit" value="Submit">
 
-    <p id="errors">
+   <p id="errors">
 
         <% errors.forEach(function(error){ %>
 
-            <%= error %><br>
+                <%= error.msg %><br>
 
         <% }) %>
 
-    </p>
+   </p>
 
 
 </form>

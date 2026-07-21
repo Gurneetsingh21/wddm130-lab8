@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>All Submissions</title>
+
+    <link rel="stylesheet" href="/css/form.css">
+</head>
+
+
+<body>
+
+
+<h1>All Submissions</h1>
+
+
+<table border="1">
+
+    <tr>
+
+        <th>Name</th>
+        <th>Email</th>
+        <th>Campus</th>
+        <th>Tickets</th>
+        <th>Lunch</th>
+        <th>Subtotal</th>
+        <th>Tax</th>
+        <th>Total</th>
+        <th>Date Submitted</th>
+
+    </tr>
+
+
+    <% submissions.forEach(function(item){ %>
+
+    <tr>
+
+        <td><%= item.name %></td>
+
+        <td><%= item.email %></td>
+
+        <td><%= item.campus %></td>
+
+        <td><%= item.tickets %></td>
+
+        <td><%= item.lunch %></td>
+
+        <td>$<%= item.subtotal.toFixed(2) %></td>
+
+        <td>$<%= item.tax.toFixed(2) %></td>
+
+        <td>$<%= item.total.toFixed(2) %></td>
+
+        <td><%= item.createdAt.toDateString() %></td>
+
+    </tr>
+
+
+    <% }) %>
+
+
+</table>
+
+
+</body>
+
+</html>
