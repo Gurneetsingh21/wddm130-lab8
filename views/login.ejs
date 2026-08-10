@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="author" content="Gurneet Singh Saini">
+    <title>Admin Login</title>
+
+```
+<link href="https://fonts.googleapis.com/css?family=Bilbo+Swash+Caps" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Kalam" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/form.css">
+```
+
+</head>
+
+<body>
+
+<nav class="top_menu">
+    <ul>
+        <li>
+            <a href="/">Order Form</a>
+        </li>
+
+```
+    <li>
+        <a href="/login">Admin Login</a>
+    </li>
+</ul>
+```
+
+</nav>
+
+<section class="w50">
+
+```
+<h2>Admin Login</h2>
+
+<form method="POST" action="/login">
+
+    <label>Username</label>
+
+    <input
+        type="text"
+        name="username"
+        value="<%= username %>"
+        required
+    >
+
+    <br>
+
+    <label>Password</label>
+
+    <input
+        type="password"
+        name="password"
+        required
+    >
+
+    <br><br>
+
+    <input type="submit" value="Login">
+
+    <% if (error) { %>
+
+        <p id="errors">
+            <%= error %>
+        </p>
+
+    <% } %>
+
+</form>
+```
+
+</section>
+
+<div class="clear"></div>
+
+</body>
+
+</html>

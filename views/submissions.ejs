@@ -3,65 +3,117 @@
 
 <head>
     <meta charset="utf-8">
-    <title>All Submissions</title>
+    <meta name="author" content="Gurneet Singh Saini">
+    <title>All Orders</title>
+
+    <link href="https://fonts.googleapis.com/css?family=Bilbo+Swash+Caps" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Kalam" rel="stylesheet">
 
     <link rel="stylesheet" href="/css/form.css">
 </head>
 
-
 <body>
 
+<nav class="top_menu">
+    <ul>
 
-<h1>All Submissions</h1>
+        <li>
+            <a href="/">Order Form</a>
+        </li>
 
+        <li>
+            <a href="/submissions">All Orders</a>
+        </li>
 
-<table border="1">
+        <% if (isAdmin) { %>
 
-    <tr>
+            <li>
+                Welcome, <%= adminName %>
+            </li>
 
-        <th>Name</th>
-        <th>Email</th>
-        <th>Campus</th>
-        <th>Tickets</th>
-        <th>Lunch</th>
-        <th>Subtotal</th>
-        <th>Tax</th>
-        <th>Total</th>
-        <th>Date Submitted</th>
+            <li>
+                <a href="/logout">Logout</a>
+            </li>
 
-    </tr>
+        <% } else { %>
 
+            <li>
+                <a href="/login">Admin Login</a>
+            </li>
 
-    <% submissions.forEach(function(item){ %>
+        <% } %>
 
-    <tr>
+    </ul>
+</nav>
 
-        <td><%= item.name %></td>
+<section class="w50">
 
-        <td><%= item.email %></td>
+    <h2>All Orders</h2>
 
-        <td><%= item.campus %></td>
+    <% if (submissions.length === 0) { %>
 
-        <td><%= item.tickets %></td>
+        <p>No orders found.</p>
 
-        <td><%= item.lunch %></td>
+    <% } else { %>
 
-        <td>$<%= item.subtotal.toFixed(2) %></td>
+        <% submissions.forEach(function(order) { %>
 
-        <td>$<%= item.tax.toFixed(2) %></td>
+            <div class="formData">
 
-        <td>$<%= item.total.toFixed(2) %></td>
+                <p>
 
-        <td><%= item.createdAt.toDateString() %></td>
+                    <strong>Name:</strong>
+                    <%= order.name %>
+                    <br>
 
-    </tr>
+                    <strong>Email:</strong>
+                    <%= order.email %>
+                    <br>
 
+                    <strong>Phone:</strong>
+                    <%= order.phone %>
+                    <br>
 
-    <% }) %>
+                    <strong>Post Code:</strong>
+                    <%= order.postcode %>
+                    <br>
 
+                    <strong>Campus:</strong>
+                    <%= order.campus %>
+                    <br>
 
-</table>
+                    <strong>Tickets:</strong>
+                    <%= order.tickets %>
+                    <br>
 
+                    <strong>Lunch:</strong>
+                    <%= order.lunch %>
+                    <br>
+
+                    <strong>Subtotal:</strong>
+                    $<%= order.subtotal.toFixed(2) %>
+                    <br>
+
+                    <strong>Tax:</strong>
+                    $<%= order.tax.toFixed(2) %>
+                    <br>
+
+                    <strong>Total:</strong>
+                    $<%= order.total.toFixed(2) %>
+
+                </p>
+
+            </div>
+
+            <hr>
+
+        <% }) %>
+
+    <% } %>
+
+</section>
+
+<div class="clear"></div>
 
 </body>
 

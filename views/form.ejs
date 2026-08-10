@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="author" content="Gurneet Singh Saini">
-    <title>Forms and Validation</title>
+    <title>Order Form</title>
 
     <link href="https://fonts.googleapis.com/css?family=Bilbo+Swash+Caps" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Kalam" rel="stylesheet">
@@ -12,84 +12,107 @@
     <link rel="stylesheet" href="/css/form.css">
 </head>
 
-
 <body>
 
 <nav class="top_menu">
     <ul>
-        <li>
-            <a href="#">Order Form</a>
-        </li>
 
         <li>
-          <a href="/submissions">All Orders</a>
+            <a href="/">Order Form</a>
         </li>
+
+        <% if (isAdmin) { %>
+
+            <li>
+                <a href="/submissions">All Orders</a>
+            </li>
+
+            <li>
+                Welcome, <%= adminName %>
+            </li>
+
+            <li>
+                <a href="/logout">Logout</a>
+            </li>
+
+        <% } else { %>
+
+            <li>
+                <a href="/login">Admin Login</a>
+            </li>
+
+        <% } %>
+
     </ul>
 </nav>
-
 
 <section class="w50">
 
 <form method="POST" action="/processForm">
 
     <label>Name</label>
-    <input 
-        type="text" 
-        name="name"
-        value="<%= formData.name %>"
-    >
-    <br>
 
+    <input
+        type="text"
+        name="name"
+        value="<%= formData.name || '' %>"
+    >
+
+    <br>
 
     <label>Email</label>
-    <input 
-        type="email" 
-        name="email"
-        value="<%= formData.email %>"
-    >
-    <br>
 
+    <input
+        type="email"
+        name="email"
+        value="<%= formData.email || '' %>"
+    >
+
+    <br>
 
     <label>Phone</label>
-    <input 
-        type="text" 
-        name="phone"
-        value="<%= formData.phone %>"
-    >
-    <br>
 
+    <input
+        type="text"
+        name="phone"
+        value="<%= formData.phone || '' %>"
+    >
+
+    <br>
 
     <label>Post Code</label>
-    <input 
-        type="text" 
-        name="postcode"
-        value="<%= formData.postcode %>"
-    >
-    <br>
 
+    <input
+        type="text"
+        name="postcode"
+        value="<%= formData.postcode || '' %>"
+    >
+
+    <br>
 
     <label>Will you have lunch?</label>
 
-    <input 
-        type="radio" 
-        name="lunch" 
+    <input
+        type="radio"
+        name="lunch"
         value="yes"
         <%= formData.lunch === "yes" ? "checked" : "" %>
     >
+
     Yes
 
     &nbsp;&nbsp;&nbsp;
 
-    <input 
-        type="radio" 
-        name="lunch" 
+    <input
+        type="radio"
+        name="lunch"
         value="no"
         <%= formData.lunch === "no" ? "checked" : "" %>
     >
+
     No
 
     <br>
-
 
     <label>Number of Tickets</label>
 
@@ -113,7 +136,6 @@
 
     <br>
 
-
     <label>Which Campus?</label>
 
     <select name="campus">
@@ -134,28 +156,23 @@
 
     </select>
 
-
     <br><br>
-
 
     <input type="submit" value="Submit">
 
-   <p id="errors">
+    <p id="errors">
 
         <% errors.forEach(function(error){ %>
 
-                <%= error.msg %><br>
+            <%= error.msg || error %><br>
 
         <% }) %>
 
-   </p>
-
+    </p>
 
 </form>
 
 </section>
-
-
 
 <section class="w50">
 
@@ -185,13 +202,11 @@
 
             Total: $<%= receipt.total.toFixed(2) %>
 
-
         <% } else { %>
 
             This is where the form data will show up.
 
         <% } %>
-
 
     </p>
 
@@ -199,9 +214,7 @@
 
 </section>
 
-
 <div class="clear"></div>
-
 
 </body>
 
