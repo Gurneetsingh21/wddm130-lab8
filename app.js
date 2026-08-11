@@ -225,6 +225,23 @@ app.get('/submissions', async (req, res) => {
     }
 });
 
+app.get('/db-test', async (req, res) => {
+    try {
+        await connectDB();
+
+        const admin = await Admin.findOne({ username: 'admin' });
+
+        if (admin) {
+            res.send('MongoDB connected and admin found');
+        } else {
+            res.send('MongoDB connected but admin not found');
+        }
+
+    } catch (error) {
+        res.send('MongoDB error: ' + error.message);
+    }
+});
+
 if (require.main === module) {
     app.listen(3000, () => {
         console.log('Server running on http://localhost:3000');
