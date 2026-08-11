@@ -59,7 +59,10 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
+
+app.use(express.urlencoded({
+    extended: true
+}));
 
 app.use(session({
     secret: process.env.SESSION_SECRET || 'lab8-secret-key',
@@ -84,6 +87,14 @@ app.use((req, res, next) => {
     res.locals.adminName = req.session.adminName || null;
 
     next();
+});
+
+app.get('/', (req, res) => {
+    res.render('form', {
+        formData: {},
+        errors: [],
+        receipt: null
+    });
 });
 
 app.get('/login', (req, res) => {
@@ -148,54 +159,10 @@ app.get('/logout', (req, res) => {
     });
 });
 
-app.get('/', (req, res) => {
-    res.render('form', {
-        formData: {},
-        errors: [],
-        receipt: null
-    });
-});
-
 app.post(
     '/processForm',
-
     [
-        body('name')
-            .notEmpty()
-            .withMessage('Name is required.'),
-
-        body('email')
-            .notEmpty()
-            .withMessage('Email is required.'),
-
-        body('phone')
-            .matches(/^\(?(\d{3})\)?[\.\-\/\s]?(\d{3})[\.\-\/\s]?(\d{4})$/)
-            .withMessage('Phone is not in correct format.'),
-
-        body('postcode')
-            .matches(/^[A-Z][0-9][A-Z]\s[0-9][A-Z][0-9]$/i)
-            .withMessage('Post code is not in correct format.'),
-
-        body('lunch')
-            .notEmpty()
-            .withMessage('Please select a lunch option.')
-            .custom((value, { req }) => {
-                if (
-                    value === 'yes' &&
-                    Number(req.body.tickets) < 3
-                ) {
-                    throw new Error(
-                        'Lunch can only be purchased when buying 3 or more tickets.'
-                    );
-                }
-
-                return true;
-            }),
-
         body('tickets')
-            .notEmpty()
-            .withMessage('Please select number of tickets.')
-            .bail()
             .isNumeric()
             .withMessage('Tickets must be a valid number.')
             .custom(value => {
@@ -208,13 +175,24 @@ app.post(
                 return true;
             }),
 
-        body('campus')
-            .notEmpty()
-            .withMessage('Please select a campus.')
+        body('lunch')
+            .custom((value, { req }) => {
+                if (
+                    value === 'yes' &&
+                    Number(req.body.tickets) < 3
+                ) {
+                    throw new Error(
+                        'Lunch can only be purchased when buying 3 or more tickets.'
+                    );
+                }
+
+                return true;
+            })
     ],
 
     async (req, res) => {
         const formData = req.body;
+
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
@@ -225,15 +203,14 @@ app.post(
             });
         }
 
+        const ticketPrice = 50;
+
         const tickets = Number(formData.tickets);
 
-        let subtotal = tickets * 100;
-
-        if (formData.lunch === 'yes') {
-            subtotal += 60;
-        }
+        const subtotal = tickets * ticketPrice;
 
         const tax = subtotal * 0.13;
+
         const total = subtotal + tax;
 
         try {
@@ -243,7 +220,7 @@ app.post(
                 name: formData.name,
                 email: formData.email,
                 phone: formData.phone,
-                postcode: formData.postcode.toUpperCase(),
+                postcode: formData.postcode,
                 campus: formData.campus,
                 tickets: tickets,
                 lunch: formData.lunch,
@@ -280,13 +257,10 @@ app.get(
     '/submissions',
     isAuthenticated,
     async (req, res) => {
-
         try {
             await connectDB();
 
-            const submissions = await Submission
-                .find()
-                .sort({ createdAt: -1 });
+            const submissions = await Submission.find();
 
             res.render('submissions', {
                 submissions: submissions
@@ -294,6 +268,7 @@ app.get(
 
         } catch (error) {
             console.log(error);
+
             res.send('Error loading submissions');
         }
     }
