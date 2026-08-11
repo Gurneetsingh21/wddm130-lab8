@@ -14,6 +14,7 @@ const Submission = require('./models/Submission');
 const Admin = require('./models/Admin');
 
 const app = express();
+console.log('MONGO_URI exists:', !!process.env.MONGO_URI);
 
 let dbConnection;
 
