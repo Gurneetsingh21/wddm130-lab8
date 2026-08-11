@@ -1,11 +1,11 @@
 const dns = require('dns');
-
 dns.setDefaultResultOrder('ipv4first');
 
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const { body, validationResult } = require('express-validator');
 
 require('dotenv').config();
@@ -14,7 +14,6 @@ const Submission = require('./models/Submission');
 const Admin = require('./models/Admin');
 
 const app = express();
-console.log('MONGO_URI exists:', !!process.env.MONGO_URI);
 
 let dbConnection;
 
@@ -24,13 +23,37 @@ async function connectDB() {
     }
 
     if (!dbConnection) {
-        dbConnection = mongoose.connect(process.env.MONGO_URI, {
-            serverSelectionTimeoutMS: 10000
-        });
+        dbConnection = mongoose.connect(process.env.MONGO_URI);
     }
 
     await dbConnection;
 }
+
+async function ensureAdmin() {
+    await connectDB();
+
+    const existingAdmin = await Admin.findOne({
+        username: 'admin'
+    });
+
+    if (!existingAdmin) {
+        await Admin.create({
+            username: 'admin',
+            password: 'admin123',
+            displayName: 'Admin'
+        });
+    }
+}
+
+function isAuthenticated(req, res, next) {
+    if (req.session.isAdmin) {
+        return next();
+    }
+
+    res.redirect('/login');
+}
+
+app.set('trust proxy', 1);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -39,12 +62,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-    secret: 'lab8-secret-key',
+    secret: process.env.SESSION_SECRET || 'lab8-secret-key',
     resave: false,
     saveUninitialized: false,
+
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_URI,
+        collectionName: 'sessions'
+    }),
+
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
         maxAge: 1000 * 60 * 60
     }
 }));
@@ -52,6 +82,7 @@ app.use(session({
 app.use((req, res, next) => {
     res.locals.isAdmin = req.session.isAdmin || false;
     res.locals.adminName = req.session.adminName || null;
+
     next();
 });
 
@@ -66,14 +97,13 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        await connectDB();
+        await ensureAdmin();
 
         const admin = await Admin.findOne({
-            username: username,
-            password: password
+            username: username
         });
 
-        if (!admin) {
+        if (!admin || admin.password !== password) {
             return res.render('login', {
                 username: username,
                 error: 'Invalid username or password.'
@@ -128,29 +158,61 @@ app.get('/', (req, res) => {
 
 app.post(
     '/processForm',
-    [
-        body('tickets')
-            .isNumeric()
-            .withMessage('Tickets must be a valid number.')
-            .custom(value => {
-                if (Number(value) <= 0) {
-                    throw new Error('Tickets must be greater than 0.');
-                }
 
-                return true;
-            }),
+    [
+        body('name')
+            .notEmpty()
+            .withMessage('Name is required.'),
+
+        body('email')
+            .notEmpty()
+            .withMessage('Email is required.'),
+
+        body('phone')
+            .matches(/^\(?(\d{3})\)?[\.\-\/\s]?(\d{3})[\.\-\/\s]?(\d{4})$/)
+            .withMessage('Phone is not in correct format.'),
+
+        body('postcode')
+            .matches(/^[A-Z][0-9][A-Z]\s[0-9][A-Z][0-9]$/i)
+            .withMessage('Post code is not in correct format.'),
 
         body('lunch')
+            .notEmpty()
+            .withMessage('Please select a lunch option.')
             .custom((value, { req }) => {
-                if (value === 'yes' && Number(req.body.tickets) < 3) {
+                if (
+                    value === 'yes' &&
+                    Number(req.body.tickets) < 3
+                ) {
                     throw new Error(
                         'Lunch can only be purchased when buying 3 or more tickets.'
                     );
                 }
 
                 return true;
-            })
+            }),
+
+        body('tickets')
+            .notEmpty()
+            .withMessage('Please select number of tickets.')
+            .bail()
+            .isNumeric()
+            .withMessage('Tickets must be a valid number.')
+            .custom(value => {
+                if (Number(value) <= 0) {
+                    throw new Error(
+                        'Tickets must be greater than 0.'
+                    );
+                }
+
+                return true;
+            }),
+
+        body('campus')
+            .notEmpty()
+            .withMessage('Please select a campus.')
     ],
+
     async (req, res) => {
         const formData = req.body;
         const errors = validationResult(req);
@@ -163,28 +225,33 @@ app.post(
             });
         }
 
-        const ticketPrice = 50;
         const tickets = Number(formData.tickets);
 
-        const subtotal = tickets * ticketPrice;
+        let subtotal = tickets * 100;
+
+        if (formData.lunch === 'yes') {
+            subtotal += 60;
+        }
+
         const tax = subtotal * 0.13;
         const total = subtotal + tax;
 
-        const submission = new Submission({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            postcode: formData.postcode,
-            campus: formData.campus,
-            tickets: tickets,
-            lunch: formData.lunch,
-            subtotal: subtotal,
-            tax: tax,
-            total: total
-        });
-
         try {
             await connectDB();
+
+            const submission = new Submission({
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                postcode: formData.postcode.toUpperCase(),
+                campus: formData.campus,
+                tickets: tickets,
+                lunch: formData.lunch,
+                subtotal: subtotal,
+                tax: tax,
+                total: total
+            });
+
             await submission.save();
 
             res.render('form', {
@@ -198,53 +265,45 @@ app.post(
 
             res.render('form', {
                 formData: formData,
-                errors: ['There was an error saving your order.'],
+                errors: [
+                    {
+                        msg: 'There was an error saving your order.'
+                    }
+                ],
                 receipt: null
             });
         }
     }
 );
 
-app.get('/submissions', async (req, res) => {
-    if (!req.session.isAdmin) {
-        return res.redirect('/login');
-    }
+app.get(
+    '/submissions',
+    isAuthenticated,
+    async (req, res) => {
 
-    try {
-        await connectDB();
+        try {
+            await connectDB();
 
-        const submissions = await Submission.find();
+            const submissions = await Submission
+                .find()
+                .sort({ createdAt: -1 });
 
-        res.render('submissions', {
-            submissions: submissions
-        });
+            res.render('submissions', {
+                submissions: submissions
+            });
 
-    } catch (error) {
-        console.log(error);
-        res.send('Error loading submissions');
-    }
-});
-
-app.get('/db-test', async (req, res) => {
-    try {
-        await connectDB();
-
-        const admin = await Admin.findOne({ username: 'admin' });
-
-        if (admin) {
-            res.send('MongoDB connected and admin found');
-        } else {
-            res.send('MongoDB connected but admin not found');
+        } catch (error) {
+            console.log(error);
+            res.send('Error loading submissions');
         }
-
-    } catch (error) {
-        res.send('MongoDB error: ' + error.message);
     }
-});
+);
 
 if (require.main === module) {
     app.listen(3000, () => {
-        console.log('Server running on http://localhost:3000');
+        console.log(
+            'Server running on http://localhost:3000'
+        );
     });
 }
 
