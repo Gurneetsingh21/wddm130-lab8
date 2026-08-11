@@ -5,7 +5,7 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
+const { MongoStore } = require('connect-mongo');
 const { body, validationResult } = require('express-validator');
 
 require('dotenv').config();
